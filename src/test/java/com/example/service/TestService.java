@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.entity.Bar;
 import com.example.entity.Foo;
 import com.example.entity.FooBar;
@@ -25,20 +26,47 @@ public class TestService {
     private FooBarMapper fooBarMapper;
 
     @Resource
-    private BaseMapper<?> fooMapper;
+    private BaseMapper<Foo> fooMapper;
 
     @Resource
-    private BaseMapper<?> barMapper;
+    private BaseMapper<Bar> barMapper;
+
+    @Resource
+    private FooBarService fooBarService;
+
+    @Resource
+    private ServiceImpl<BaseMapper<Foo>, Foo> fooService;
+
+    @Resource
+    private ServiceImpl<BaseMapper<Bar>, Bar> barService;
+
+    @Test
+    public void testService() {
+
+        List<FooBar> fooBarList = fooBarService.lambdaQuery().list();
+        log.info("foo_bar: {}", fooBarList);
+
+        List<Foo> fooList = fooService.lambdaQuery().list();
+        log.info("foo: {}", fooList);
+
+        List<Bar> barList = barService.lambdaQuery().list();
+        log.info("bar: {}", barList);
+
+    }
 
 
     @Test
-    public void test() {
+    public void testMapper() {
+
         List<FooBar> fooBarList = fooBarMapper.selectList(null);
-        List<Foo> fooList = (List<Foo>) fooMapper.selectList(null);
-        List<Bar> barList = (List<Bar>) barMapper.selectList(null);
         log.info("foo_bar: {}", fooBarList);
+
+        List<Foo> fooList = fooMapper.selectList(null);
         log.info("foo: {}", fooList);
+
+        List<Bar> barList = barMapper.selectList(null);
         log.info("bar: {}", barList);
+
     }
 
 

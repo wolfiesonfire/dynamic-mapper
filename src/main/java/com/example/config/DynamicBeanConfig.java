@@ -8,9 +8,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.annotation.AnnotationDescription;
 import net.bytebuddy.description.type.TypeDescription;
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.mapper.MapperFactoryBean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 @Configuration
 @AutoConfigureAfter(SpringUtil.class)
 public class DynamicBeanConfig {
+
+    private final static Logger log = LoggerFactory.getLogger(DynamicBeanConfig.class);
 
     private final static String ENTITY_BASE_PACKAGE = "com.example.entity";
     private final static String MAPPER_BASE_PACKAGE = "com.example.mapper";
@@ -68,18 +73,19 @@ public class DynamicBeanConfig {
                         .name(mapperClassName)
                         .annotateType(AnnotationDescription.Builder.ofType(Mapper.class).build())
                         .make()
-                        .load(getClass().getClassLoader())
+                        .load(getClass().getClassLoader(), new ClassLoadingStrategy.ForBootstrapInjection(null, null))
                         .getLoaded();
 
                 MapperFactoryBean<?> factoryBean = new MapperFactoryBean<>(mapperClass);
                 factoryBean.setSqlSessionFactory(sqlSessionFactory);
                 sqlSessionFactory.getConfiguration().addMapper(mapperClass);
 
+                // 注册 mapper
                 Object mapperInstance = null;
                 try {
                     SpringUtil.registerBean(getBeanName(mapperClassName), mapperInstance = factoryBean.getObject());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.warn("register BaseMapper error", e);
                 }
 
                 /* 创建 service */
@@ -88,24 +94,15 @@ public class DynamicBeanConfig {
                         .name(serviceClassName)
                         .annotateType(AnnotationDescription.Builder.ofType(Service.class).build())
                         .make()
-                        .load(getClass().getClassLoader())
+                        .load(getClass().getClassLoader(), new ClassLoadingStrategy.ForBootstrapInjection(null, null))
                         .getLoaded();
 
-                /*
-                  TODO 注册 Service 时，Autowired 找不到具体枚举类型异常
-
-                  Field baseMapper in com.baomidou.mybatisplus.extension.service.impl.ServiceImpl required a single bean, but 2 were found:
-                    - fooBarMapper: defined in file [D:\...\com\example\mapper\FooBarMapper.class]
-                    - fooMapper: a programmatically registered singleton
-                */
-
-                /*
-                  注册 bean 会抛出上述异常
+                // 注册 service
                 try {
-                     SpringUtil.registerBean(getBeanName(serviceClassName), serviceClass.newInstance());
-                } catch (InstantiationException | IllegalAccessException e) {
-                    e.printStackTrace();
-                }*/
+                    SpringUtil.registerBean(getBeanName(serviceClassName), serviceClass.newInstance());
+                } catch (Exception e) {
+                    log.warn("register ServiceImpl error", e);
+                }
 
             }
 
