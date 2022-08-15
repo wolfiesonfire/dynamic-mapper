@@ -12,7 +12,7 @@
 
 ---
 
-定义一个 `@TableName` 修饰的实体
+定义一个 `@TableName` 修饰的数据库实体
 
 ```java
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -22,16 +22,29 @@ public class Foo {
 }
 ```
 
+使用
+
 ```java
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.entity.Foo;
 
 import javax.annotation.Resource;
 
-@Resource
-private BaseMapper<Foo> fooMapper;
+public class Test {
 
-@Resource
-private ServiceImpl<BaseMapper<Foo>, Foo> fooService;
+    @Resource
+    private BaseMapper<Foo> fooMapper;
+
+    @Resource
+    private ServiceImpl<BaseMapper<Foo>, Foo> fooService;
+
+    public void test() {
+        fooMapper.selectList(null);
+        fooService.lambdaQuery().list();
+    }
+}
 
 ```
-
 
